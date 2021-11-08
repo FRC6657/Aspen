@@ -4,4 +4,11 @@
 
 package frc.robot;
 
-public final class Constants {}
+public final class Constants {
+
+    public final static int kFrontLeft = 1;
+    public final static int kBackLeft = 2;
+    public final static int kFrontRight = 3;
+    public final static int kBackRight = 4;
+
+}
