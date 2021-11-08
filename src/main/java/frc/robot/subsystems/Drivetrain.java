@@ -6,7 +6,15 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.ctre.phoenix.sensors.PigeonIMU;
 
+import edu.wpi.first.wpilibj.controller.PIDController;
+import edu.wpi.first.wpilibj.controller.SimpleMotorFeedforward;
+import edu.wpi.first.wpilibj.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.geometry.Translation2d;
+import edu.wpi.first.wpilibj.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.kinematics.MecanumDriveKinematics;
+import edu.wpi.first.wpilibj.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.SuppliedValueWidget;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -19,6 +27,24 @@ public class Drivetrain extends SubsystemBase {
   private final WPI_TalonSRX mFrontRight;
   private final WPI_TalonSRX mBackLeft;
   private final WPI_TalonSRX mBackRight;
+
+  private final PigeonIMU mPigeon;
+
+  private final Translation2d mFrontLeftLocation = new Translation2d(-0.2775, 0.255);
+  private final Translation2d mFrontRightLocation = new Translation2d(0.2775, 0.255);
+  private final Translation2d mBackLeftLocation = new Translation2d(-0.2775, -0.255);
+  private final Translation2d mBackRightLocation = new Translation2d(0.2775, -0.255);
+
+  private final PIDController mFrontLeftPIDController = new PIDController(1, 0, 0);
+  private final PIDController mFrontRightPIDController = new PIDController(1, 0, 0);
+  private final PIDController mBackLeftPIDController = new PIDController(1, 0, 0);
+  private final PIDController mBackRightPIDController = new PIDController(1, 0, 0);
+
+  private final MecanumDriveKinematics mKinematics = new MecanumDriveKinematics(
+    mFrontLeftLocation, mFrontRightLocation, mBackLeftLocation, mBackRightLocation);
+
+  //TODO: Run Characterization to get these values
+  private final SimpleMotorFeedforward mFeedForward = new SimpleMotorFeedforward(1, 3);
 
   private SuppliedValueWidget<Double> mFrontLeftPower = Shuffleboard.getTab("Drivetrain")
     .addNumber("Front Left", () -> getPowers()[0]).withPosition(0,0).withSize(2, 1);
@@ -41,10 +67,12 @@ public class Drivetrain extends SubsystemBase {
 
   public Drivetrain() {
 
-    mFrontLeft = new WPI_TalonSRX(Constants.kFrontLeft);
-    mFrontRight = new WPI_TalonSRX(Constants.kFrontRight);
-    mBackLeft = new WPI_TalonSRX(Constants.kBackLeft);
-    mBackRight = new WPI_TalonSRX(Constants.kBackRight);
+    mFrontLeft = new WPI_TalonSRX(Constants.kFrontLeftID);
+    mFrontRight = new WPI_TalonSRX(Constants.kFrontRightID);
+    mBackLeft = new WPI_TalonSRX(Constants.kBackLeftID);
+    mBackRight = new WPI_TalonSRX(Constants.kBackRightID);
+
+    mPigeon = new PigeonIMU(Constants.kPigeonID);
 
     mFrontLeft.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
     mFrontRight.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
@@ -53,13 +81,51 @@ public class Drivetrain extends SubsystemBase {
 
   }
 
-  public void Drive(double pXPower, double pYPower, double pZPower){
+  @SuppressWarnings("ParameterName")
+  public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
+    var mMecanumDriveWheelSpeeds =
+        mKinematics.toWheelSpeeds(
+            fieldRelative
+                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, Rotation2d.fromDegrees(mPigeon.getFusedHeading()))
+                : new ChassisSpeeds(xSpeed, ySpeed, rot));
+    mMecanumDriveWheelSpeeds.normalize(3);
+    setSpeeds(mMecanumDriveWheelSpeeds);
+  }
 
-    mFrontLeft.set(pXPower + pYPower + pZPower);
-    mFrontRight.set(-pXPower + pYPower + pZPower);
-    mBackLeft.set(pXPower - pYPower + pZPower);
-    mBackRight.set(-pXPower - pYPower + pZPower);
+  public void setSpeeds(MecanumDriveWheelSpeeds pSpeeds){
 
+    final double mFrontLeftFeedForward = mFeedForward.calculate(pSpeeds.frontLeftMetersPerSecond);
+    final double mFrontRightFeedForward = mFeedForward.calculate(pSpeeds.frontRightMetersPerSecond);
+    final double mBackLeftFeedForward = mFeedForward.calculate(pSpeeds.rearLeftMetersPerSecond);
+    final double mBackRightFeedForward = mFeedForward.calculate(pSpeeds.rearRightMetersPerSecond);
+
+    final double mFrontLeftOutput =
+        mFrontLeftPIDController.calculate(
+            mFrontLeft.getSelectedSensorVelocity() * Math.PI * 0.1524, pSpeeds.frontLeftMetersPerSecond);
+    final double mFrontRightOutput =
+        mFrontRightPIDController.calculate(
+            mFrontRight.getSelectedSensorVelocity() * Math.PI * 0.1524, pSpeeds.frontRightMetersPerSecond);
+    final double mBackLeftOutput =
+        mBackLeftPIDController.calculate(
+            mBackLeft.getSelectedSensorVelocity() * Math.PI * 0.1524, pSpeeds.rearLeftMetersPerSecond);
+    final double mBackRightOutput =
+        mBackRightPIDController.calculate(
+            mBackRight.getSelectedSensorVelocity() * Math.PI * 0.1524, pSpeeds.rearRightMetersPerSecond);
+   
+    mFrontLeft.setVoltage(mFrontLeftOutput + mFrontLeftFeedForward);
+    mFrontRight.setVoltage(mFrontRightOutput + mFrontRightFeedForward);
+    mBackLeft.setVoltage(mBackLeftOutput + mBackLeftFeedForward);
+    mBackRight.setVoltage(mBackRightOutput + mBackRightFeedForward);
+
+  }
+
+  public MecanumDriveWheelSpeeds getCurrentState() {
+    return new MecanumDriveWheelSpeeds(
+      mFrontLeft.getSelectedSensorVelocity() * Math.PI * 0.1524,
+      mFrontRight.getSelectedSensorVelocity() * Math.PI * 0.1524,
+      mBackLeft.getSelectedSensorVelocity() * Math.PI * 0.1524,
+      mBackRight.getSelectedSensorVelocity() * Math.PI * 0.1524
+    );
   }
 
   public double[] getPowers(){

@@ -6,9 +6,11 @@ package frc.robot;
 
 public final class Constants {
 
-    public final static int kFrontLeft = 1;
-    public final static int kBackLeft = 2;
-    public final static int kFrontRight = 3;
-    public final static int kBackRight = 4;
+    public final static int kFrontLeftID = 1;
+    public final static int kBackLeftID = 2;
+    public final static int kFrontRightID = 3;
+    public final static int kBackRightID = 4;
+    
+    public final static int kPigeonID = 5;
 
 }
