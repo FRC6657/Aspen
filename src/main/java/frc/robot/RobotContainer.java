@@ -5,8 +5,10 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.commands.DriverControl;
 import frc.robot.subsystems.Drivetrain;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class RobotContainer {
   
@@ -18,10 +20,33 @@ public class RobotContainer {
     configureButtonBindings();
   }
 
-  private void configureButtonBindings() {}
+  private void configureButtonBindings() {
+
+    CommandScheduler.getInstance().setDefaultCommand(mDrivetrain, 
+      new DriverControl(mDrivetrain,
+        () -> -cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftY.value),1,0.1),
+        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftX.value),1,0.1),
+        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kRightX.value),1,0.1)
+      )
+    );
+
+  }
+
+  private double cubicDeadband(double pInput, double pWeight, double pDeadband){
+
+    double output;
+
+    if(Math.abs(pInput) > pDeadband){
+      output = (((pWeight * (Math.pow(pInput, 3)) + 1*(1 - pWeight) * pInput) - (Math.abs(pInput)) / pInput * (pWeight * (Math.pow(pDeadband, 3)) + (1 - pWeight) * pDeadband)) / (1 - (pWeight * (Math.pow(pDeadband, 3)) + (1 - pWeight) * pDeadband)));
+    }
+    else{
+      output = 0;
+    }
+    return output;
+  }
+
 
   public Command getAutonomousCommand() {
-    // An ExampleCommand will run in autonomous
     return null;
   }
 }
