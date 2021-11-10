@@ -35,6 +35,7 @@ public class Drivetrain extends SubsystemBase {
   private final Translation2d mBackLeftLocation = new Translation2d(-0.2775, -0.255);
   private final Translation2d mBackRightLocation = new Translation2d(0.2775, -0.255);
 
+  //Characterization should get these aswell
   private final PIDController mFrontLeftPIDController = new PIDController(1, 0, 0);
   private final PIDController mFrontRightPIDController = new PIDController(1, 0, 0);
   private final PIDController mBackLeftPIDController = new PIDController(1, 0, 0);

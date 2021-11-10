@@ -9,6 +9,7 @@ import frc.robot.commands.DriverControl;
 import frc.robot.subsystems.Drivetrain;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 public class RobotContainer {
   
@@ -24,11 +25,15 @@ public class RobotContainer {
 
     CommandScheduler.getInstance().setDefaultCommand(mDrivetrain, 
       new DriverControl(mDrivetrain,
-        () -> -cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftY.value),1,0.1),
-        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftX.value),1,0.1),
-        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kRightX.value),1,0.1)
+        () -> -cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftY.value) * 0.5,1,0.1),
+        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftX.value) * 0.5,1,0.1),
+        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kRightX.value) * 0.5,1,0.1)
       )
     );
+
+    JoystickButton mA = new JoystickButton(mController, XboxController.Button.kA.value);
+    JoystickButton mB = new JoystickButton(mController, XboxController.Button.kB.value);
+
 
   }
 
