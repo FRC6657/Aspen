@@ -6,7 +6,9 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.ctre.phoenix.sensors.PigeonIMU;
 
+import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.SuppliedValueWidget;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -19,6 +21,10 @@ public class Drivetrain extends SubsystemBase {
   private final WPI_TalonSRX mFrontRight;
   private final WPI_TalonSRX mBackLeft;
   private final WPI_TalonSRX mBackRight;
+
+  private final MecanumDrive mMecanumDrive;
+
+  private final PigeonIMU mPigeonIMU;
 
   private SuppliedValueWidget<Double> mFrontLeftPower = Shuffleboard.getTab("Drivetrain")
     .addNumber("Front Left", () -> getPowers()[0]).withPosition(0,0).withSize(2, 1);
@@ -51,14 +57,19 @@ public class Drivetrain extends SubsystemBase {
     mBackLeft.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
     mBackRight.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
 
+    mPigeonIMU = new PigeonIMU(7);
+
+    mFrontLeft.setInverted(true);
+    mBackLeft.setInverted(true);
+
+    mMecanumDrive = new MecanumDrive(mFrontLeft, mBackLeft , mFrontRight, mBackRight);
+
   }
 
   public void Drive(double pXPower, double pYPower, double pZPower){
 
-    mFrontLeft.set(pXPower + pYPower + pZPower);
-    mFrontRight.set(-pXPower + pYPower + pZPower);
-    mBackLeft.set(pXPower - pYPower + pZPower);
-    mBackRight.set(-pXPower - pYPower + pZPower);
+    mMecanumDrive.driveCartesian(
+      pXPower, pYPower, pZPower, mPigeonIMU.getFusedHeading());
 
   }
 
