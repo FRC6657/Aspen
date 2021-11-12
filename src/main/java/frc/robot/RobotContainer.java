@@ -78,7 +78,7 @@ public class RobotContainer {
     bottomRight.whenHeld(new RunConveyor(mConveyor, -0.5));
 
     mAutoChooser.setDefaultOption("Base Line", new BaseLine());
-    mAutoChooser.addOption("Seek Aim", new MaybeUnloadBalls());
+    mAutoChooser.addOption("MaybeScore", new MaybeUnloadBalls());
 
     mDriverstation.add("Autonomous Select", mAutoChooser).withPosition(0, 0).withSize(2, 1);   
 
