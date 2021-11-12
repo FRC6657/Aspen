@@ -8,6 +8,9 @@ import java.sql.Driver;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import frc.robot.commands.DriverControl;
 import frc.robot.commands.RunConveyor;
 import frc.robot.commands.RunIntake;
@@ -26,8 +29,29 @@ public class RobotContainer {
   private final XboxController mController = new XboxController(0);
   private final Joystick mJoystick = new Joystick(1);
 
+  private final SendableChooser<Command> mAutoChooser = new SendableChooser<>();
+  private ShuffleboardTab mDriverstation = Shuffleboard.getTab("Driver Station");
+
+
   public RobotContainer() {
     configureButtonBindings();
+  }
+
+  private class BaseLine extends SequentialCommandGroup {
+    public BaseLine(){
+      addCommands(
+        new DriverControl(mDrivetrain, () -> 0, () -> 0.7, () -> 0).withTimeout(1)
+      );
+    }
+  }
+
+  private class MaybeUnloadBalls extends SequentialCommandGroup {
+    public MaybeUnloadBalls(){
+      addCommands(
+        new DriverControl(mDrivetrain, () -> 0, () -> -0.7, () -> 0).withTimeout(1),
+        new RunConveyor(mConveyor, 0.5).withTimeout(4)
+      );
+    }
   }
 
   private void configureButtonBindings() {
@@ -53,6 +77,10 @@ public class RobotContainer {
     bottomLeft.whenHeld(new RunIntake(mIntake, -1));
     bottomRight.whenHeld(new RunConveyor(mConveyor, -0.5));
 
+    mAutoChooser.setDefaultOption("Base Line", new BaseLine());
+    mAutoChooser.addOption("Seek Aim", new MaybeUnloadBalls());
+
+    mDriverstation.add("Autonomous Select", mAutoChooser).withPosition(0, 0).withSize(2, 1);   
 
   }
 
@@ -70,7 +98,7 @@ public class RobotContainer {
   }
 
 
-  // "I hate every character of this implementation but it works, and its late so dont @me" - Andrew
+  // "I hate every character of this implementation but it works, and its latelos so dont @me" - Andrew
   public Command getAutonomousCommand() {
     return new SequentialCommandGroup(
       new DriverControl(mDrivetrain, () -> 0, () -> 0.8, () -> 0).withTimeout(1)
