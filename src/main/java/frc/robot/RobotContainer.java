@@ -4,6 +4,9 @@
 
 package frc.robot;
 
+import java.sql.Driver;
+
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.commands.DriverControl;
 import frc.robot.commands.RunConveyor;
@@ -11,6 +14,7 @@ import frc.robot.commands.RunIntake;
 import frc.robot.subsystems.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 public class RobotContainer {
@@ -20,6 +24,7 @@ public class RobotContainer {
   private final Conveyor mConveyor = new Conveyor();
 
   private final XboxController mController = new XboxController(0);
+  private final Joystick mJoystick = new Joystick(1);
 
   public RobotContainer() {
     configureButtonBindings();
@@ -35,11 +40,19 @@ public class RobotContainer {
       )
     );
 
-    JoystickButton mA = new JoystickButton(mController, XboxController.Button.kA.value);
-    JoystickButton mB = new JoystickButton(mController, XboxController.Button.kB.value);
+    JoystickButton bottomLeft = new JoystickButton(mJoystick, 3);
+    JoystickButton bottomRight = new JoystickButton(mJoystick, 4);
+    JoystickButton topLeft = new JoystickButton(mJoystick, 5);
+    JoystickButton topRight = new JoystickButton(mJoystick, 6);
 
-    mA.whenHeld(new RunIntake(mIntake, 1));
-    mB.whenHeld(new RunConveyor(mConveyor, 0.5));
+    //Powercells move up
+    topLeft.whenHeld(new RunIntake(mIntake, 1));
+    topRight.whenHeld(new RunConveyor(mConveyor, 0.5));
+
+    //Powercells move down
+    bottomLeft.whenHeld(new RunIntake(mIntake, -1));
+    bottomRight.whenHeld(new RunConveyor(mConveyor, -0.5));
+
 
   }
 
@@ -57,7 +70,10 @@ public class RobotContainer {
   }
 
 
+  // "I hate every character of this implementation but it works, and its late so dont @me" - Andrew
   public Command getAutonomousCommand() {
-    return null;
+    return new SequentialCommandGroup(
+      new DriverControl(mDrivetrain, () -> 0, () -> 0.8, () -> 0).withTimeout(1)
+    );
   }
 }
