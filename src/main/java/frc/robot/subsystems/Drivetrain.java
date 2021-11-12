@@ -4,12 +4,17 @@
 
 package frc.robot.subsystems;
 
+import java.util.Map;
+
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.sensors.PigeonIMU;
 
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.shuffleboard.SuppliedValueWidget;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -26,23 +31,43 @@ public class Drivetrain extends SubsystemBase {
 
   private final PigeonIMU mPigeonIMU;
 
-  private SuppliedValueWidget<Double> mFrontLeftPower = Shuffleboard.getTab("Drivetrain")
-    .addNumber("Front Left", () -> getPowers()[0]).withPosition(0,0).withSize(2, 1);
-  private SuppliedValueWidget<Double> mFrontRightPower = Shuffleboard.getTab("Drivetrain")
-    .addNumber("Front Right", () -> getPowers()[1]).withPosition(2,0).withSize(2, 1);
-  private SuppliedValueWidget<Double> mBackLeftPower = Shuffleboard.getTab("Drivetrain")
-    .addNumber("Back Left", () -> getPowers()[2]).withPosition(0,2).withSize(2, 1);
-  private SuppliedValueWidget<Double> mBackRightPower = Shuffleboard.getTab("Drivetrain")
-    .addNumber("Back Right", () -> getPowers()[3]).withPosition(2,2).withSize(2, 1);
+  private ShuffleboardTab mDriverstation = Shuffleboard.getTab("Driver Station");
+  private int mLoops = 0;
 
-  private SuppliedValueWidget<Double> mFrontLeftEncoder = Shuffleboard.getTab("Drivetrain")
-    .addNumber("Front Left Encoder", () -> getEncoders()[0]).withPosition(0,1).withSize(2, 1);
-  private SuppliedValueWidget<Double> mFrontRightEncoder = Shuffleboard.getTab("Drivetrain")
-    .addNumber("Front Right Encoder", () -> getEncoders()[1]).withPosition(2,1).withSize(2, 1);
-  private SuppliedValueWidget<Double> mBackLeftEncoder = Shuffleboard.getTab("Drivetrain")
-    .addNumber("Back Left Encoder", () -> getEncoders()[2]).withPosition(0,3).withSize(2, 1);
-  private SuppliedValueWidget<Double> mBackRightEncoder = Shuffleboard.getTab("Drivetrain")
-    .addNumber("Back Right Encoder", () -> getEncoders()[3]).withPosition(2,3).withSize(2, 1);
+    private NetworkTableEntry mFrontLeftEncoder = mDriverstation
+      .add("Front Left Encoder", 0)
+        .withPosition(0, 0)
+        .withSize(1, 1)
+        .withWidget(BuiltInWidgets.kTextView)
+        .getEntry();
+
+    private NetworkTableEntry mFrontRightEncoder = mDriverstation
+      .add("Front Right Encoder", 0)
+        .withPosition(1, 0)
+        .withSize(1, 1)
+        .withWidget(BuiltInWidgets.kTextView)
+        .getEntry();
+        private NetworkTableEntry mBackLeftEncoder = mDriverstation
+      .add("Back Left Encoder", 0)
+        .withPosition(0, 1)
+        .withSize(1, 1)
+        .withWidget(BuiltInWidgets.kTextView)
+        .getEntry();
+
+    private NetworkTableEntry mBackRightEncoder = mDriverstation
+      .add("Back Right Encoder", 0)
+        .withPosition(1, 1)
+        .withSize(1, 1)
+        .withWidget(BuiltInWidgets.kTextView)
+        .getEntry();
+
+    private NetworkTableEntry mGyroData = mDriverstation
+      .add("Gyro", 0)
+        .withPosition(2, 0)
+        .withSize(1, 1)
+        .withWidget(BuiltInWidgets.kTextView)
+        .getEntry();
+    
   
 
   public Drivetrain() {
@@ -52,12 +77,18 @@ public class Drivetrain extends SubsystemBase {
     mBackLeft = new WPI_TalonSRX(Constants.kBackLeft);
     mBackRight = new WPI_TalonSRX(Constants.kBackRight);
 
-    mFrontLeft.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
-    mFrontRight.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
-    mBackLeft.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
-    mBackRight.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
+    mFrontLeft.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute);
+    mFrontRight.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute);
+    mBackLeft.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute);
+    mBackRight.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute);
+
+    mFrontLeft.setSelectedSensorPosition(0);
+    mBackLeft.setSelectedSensorPosition(0);
+    mFrontRight.setSelectedSensorPosition(0);
+    mBackRight.setSelectedSensorPosition(0);
 
     mPigeonIMU = new PigeonIMU(7);
+    mPigeonIMU.setFusedHeading(0);
 
     mFrontLeft.setInverted(true);
     mBackLeft.setInverted(true);
@@ -78,16 +109,16 @@ public class Drivetrain extends SubsystemBase {
     return mPowers;
   }
 
-  public double[] getEncoders(){
-  
-    if(Robot.isReal()){
-      double[] mReadings = {mFrontLeft.getSelectedSensorPosition(), mFrontRight.getSelectedSensorPosition(), mBackLeft.getSelectedSensorPosition(), mBackRight.getSelectedSensorPosition()};
-      return mReadings;
+  @Override
+  public void periodic() {
+    mLoops += 1;
+    if(mLoops == 5){
+      mLoops = 0;
+      mFrontLeftEncoder.setNumber(mFrontLeft.getSelectedSensorPosition());
+      mFrontRightEncoder.setNumber(mFrontRight.getSelectedSensorPosition());
+      mBackLeftEncoder.setNumber(mBackLeft.getSelectedSensorPosition());
+      mBackRightEncoder.setNumber(mBackRight.getSelectedSensorPosition());
+      mGyroData.setNumber(mPigeonIMU.getFusedHeading());
     }
-    else{
-      double[] mReadings = {0,0,0,0};
-      return mReadings;
-    }
-
   }
 }

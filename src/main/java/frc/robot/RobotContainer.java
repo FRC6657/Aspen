@@ -80,7 +80,7 @@ public class RobotContainer {
     mAutoChooser.setDefaultOption("Base Line", new BaseLine());
     mAutoChooser.addOption("MaybeScore", new MaybeUnloadBalls());
 
-    mDriverstation.add("Autonomous Select", mAutoChooser).withPosition(0, 0).withSize(2, 1);   
+    mDriverstation.add("Autonomous Select", mAutoChooser).withPosition(0, 2).withSize(2, 1);   
 
   }
 
