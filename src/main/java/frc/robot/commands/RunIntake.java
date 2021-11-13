@@ -20,22 +20,14 @@ public class RunIntake extends CommandBase {
     addRequirements(mIntake);
 
   }
-  // Called every time the scheduler runs while the command is scheduled.
+
   @Override
   public void execute() {
-    System.out.println("running");
     mIntake.run(mSpeed);
   }
 
-  // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
     mIntake.run(0);
-  }
-
-  // Returns true when the command should end.
-  @Override
-  public boolean isFinished() {
-    return false;
   }
 }

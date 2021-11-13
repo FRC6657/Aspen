@@ -64,10 +64,10 @@ public class RobotContainer {
       )
     );
 
-    JoystickButton bottomLeft = new JoystickButton(mJoystick, 3);
+    JoystickButton bottomLeft = new JoystickButton(mController, 3);
     JoystickButton bottomRight = new JoystickButton(mJoystick, 4);
     JoystickButton topLeft = new JoystickButton(mJoystick, 5);
-    JoystickButton topRight = new JoystickButton(mJoystick, 6);
+    JoystickButton topRight = new JoystickButton(mController, 6);
 
     //Powercells move up
     topLeft.whenHeld(new RunIntake(mIntake, 1));
@@ -98,10 +98,7 @@ public class RobotContainer {
   }
 
 
-  // "I hate every character of this implementation but it works, and its latelos so dont @me" - Andrew
   public Command getAutonomousCommand() {
-    return new SequentialCommandGroup(
-      new DriverControl(mDrivetrain, () -> 0, () -> 0.8, () -> 0).withTimeout(1)
-    );
+    return mAutoChooser.getSelected();
   }
 }

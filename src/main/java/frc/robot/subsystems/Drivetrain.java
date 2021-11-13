@@ -77,6 +77,5 @@ public class Drivetrain extends SubsystemBase {
       double[] mReadings = {0,0,0,0};
       return mReadings;
     }
-
   }
 }
