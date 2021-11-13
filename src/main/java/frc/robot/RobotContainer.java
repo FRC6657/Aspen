@@ -40,7 +40,7 @@ public class RobotContainer {
   private class BaseLine extends SequentialCommandGroup {
     public BaseLine(){
       addCommands(
-        new DriverControl(mDrivetrain, () -> 0, () -> 0.7, () -> 0).withTimeout(1)
+        new DriverControl(mDrivetrain, () -> 0, () -> 0.7, () -> 0, () -> true).withTimeout(1)
       );
     }
   }
@@ -48,7 +48,7 @@ public class RobotContainer {
   private class MaybeUnloadBalls extends SequentialCommandGroup {
     public MaybeUnloadBalls(){
       addCommands(
-        new DriverControl(mDrivetrain, () -> 0, () -> -0.7, () -> 0).withTimeout(1),
+        new DriverControl(mDrivetrain, () -> 0, () -> -0.7, () -> 0, ()->true).withTimeout(2),
         new RunConveyor(mConveyor, 0.5).withTimeout(4)
       );
     }
@@ -58,9 +58,10 @@ public class RobotContainer {
 
     CommandScheduler.getInstance().setDefaultCommand(mDrivetrain, 
       new DriverControl(mDrivetrain,
-        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftY.value) * 0.8,1,0.1),
-        () -> -cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftX.value) * 0.8,1,0.1),
-        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kRightX.value) * 0.8,1,0.1)
+        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftY.value),1,0.1),
+        () -> -cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftX.value),1,0.1),
+        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kRightX.value),1,0.1),
+        () -> mController.getRawButton(XboxController.Button.kBumperRight.value)
       )
     );
 
