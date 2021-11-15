@@ -6,6 +6,8 @@ package frc.robot;
 
 import java.sql.Driver;
 
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -32,15 +34,16 @@ public class RobotContainer {
   private final SendableChooser<Command> mAutoChooser = new SendableChooser<>();
   private ShuffleboardTab mDriverstation = Shuffleboard.getTab("Driver Station");
 
+  private final UsbCamera mIntakeCamera = CameraServer.getInstance().startAutomaticCapture();
 
   public RobotContainer() {
     configureButtonBindings();
-  }
+  } 
 
   private class BaseLine extends SequentialCommandGroup {
     public BaseLine(){
       addCommands(
-        new DriverControl(mDrivetrain, () -> 0, () -> 0.7, () -> 0, () -> true).withTimeout(1)
+        new DriverControl(mDrivetrain, () -> 0.2, () -> 0, () -> 0, () -> true).withTimeout(3)
       );
     }
   }
@@ -48,7 +51,9 @@ public class RobotContainer {
   private class MaybeUnloadBalls extends SequentialCommandGroup {
     public MaybeUnloadBalls(){
       addCommands(
-        new DriverControl(mDrivetrain, () -> 0, () -> -0.7, () -> 0, ()->true).withTimeout(2),
+        new DriverControl(mDrivetrain, () -> 0.15, () -> 0, () -> 0.025, ()->true).withTimeout(4),
+        //new DriverControl(mDrivetrain, () -> 0.5, () -> 0, () -> 0.2, ()->true).withTimeout(0.5),
+        //new DriverControl(mDrivetrain, () -> 0.7, () -> 0, () -> 0.2, ()->true).withTimeout(0.5),
         new RunConveyor(mConveyor, 0.5).withTimeout(4)
       );
     }
@@ -56,27 +61,29 @@ public class RobotContainer {
 
   private void configureButtonBindings() {
 
+    mDriverstation.add("Camera",mIntakeCamera).withPosition(5, 0).withSize(3,4);
+
     CommandScheduler.getInstance().setDefaultCommand(mDrivetrain, 
       new DriverControl(mDrivetrain,
-        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftY.value),1,0.1),
-        () -> -cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftX.value),1,0.1),
-        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kRightX.value),1,0.1),
+        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftY.value),0,0.1),
+        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kLeftX.value),0,0.1),
+        () -> cubicDeadband(mController.getRawAxis(XboxController.Axis.kRightX.value),0,0.1),
         () -> mController.getRawButton(XboxController.Button.kBumperRight.value)
       )
     );
 
-    JoystickButton bottomLeft = new JoystickButton(mController, 3);
+    JoystickButton bottomLeft = new JoystickButton(mJoystick, 3);
     JoystickButton bottomRight = new JoystickButton(mJoystick, 4);
     JoystickButton topLeft = new JoystickButton(mJoystick, 5);
-    JoystickButton topRight = new JoystickButton(mController, 6);
+    JoystickButton topRight = new JoystickButton(mJoystick, 6);
 
     //Powercells move up
-    topLeft.whenHeld(new RunIntake(mIntake, 1));
-    topRight.whenHeld(new RunConveyor(mConveyor, 0.5));
+    topLeft.whenHeld(new RunIntake(mIntake, 0.6));
+    topRight.whenHeld(new RunConveyor(mConveyor, 0.4));
 
     //Powercells move down
-    bottomLeft.whenHeld(new RunIntake(mIntake, -1));
-    bottomRight.whenHeld(new RunConveyor(mConveyor, -0.5));
+    bottomLeft.whenHeld(new RunIntake(mIntake, -0.6));
+    bottomRight.whenHeld(new RunConveyor(mConveyor, -0.4));
 
     mAutoChooser.setDefaultOption("Base Line", new BaseLine());
     mAutoChooser.addOption("MaybeScore", new MaybeUnloadBalls());
